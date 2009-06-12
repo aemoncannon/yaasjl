@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="*"
+		xmlns:flexunit="flexunit.flexui.*"
+		addedToStage="ready()">
+  <mx:Script>
+    <![CDATA[
+	     import flexunit.framework.*;
+	     private function ready():void {
+	     var suite:TestSuite = new TestSuite();	     
+	     suite.addTestSuite(SimpleE2ETest);
+	     suite.addTestSuite(ViewE2ETest);
+	     suite.addTestSuite(EventDispatchingE2ETest);
+	     suite.addTestSuite(AnimationE2ETest);
+	     suite.addTestSuite(TextE2ETest);
+	     suite.addTestSuite(UtilTest);
+	     suite.addTestSuite(VideoE2ETest); 
+	     suite.addTestSuite(SoundE2ETest); 
+	     suite.addTestSuite(ImageE2ETest); 
+	     suite.addTestSuite(AppLifecycleE2ETest); 
+	     suite.addTestSuite(AppHTTPRequestE2ETest); 
+	     suite.addTestSuite(LocalObjectE2ETest); 
+	     testRunner.test = suite;
+	     testRunner.startTest();
+	     }
+    ]]>
+  </mx:Script>
+  <flexunit:TestRunnerBase id="testRunner" width="100%" height="100%">
+  </flexunit:TestRunnerBase>
+</mx:Application>
