@@ -11,13 +11,12 @@ package com.aemon.json{
 		public static const TYPE_RBRACKET:int = 5;
 		public static const TYPE_COMMA:int = 6;
 		public static const TYPE_COLON:int = 8;
-		public static const TYPE_TRUE:int = 9;
-		public static const TYPE_FALSE:int = 10;
-		public static const TYPE_NULL:int = 11;
-		public static const TYPE_STRING:int = 12;
-		public static const TYPE_NUMBER:int = 13;
-		public static const TYPE_INTEGER:int = 14;
-		public static const TYPE_DOUBLE:int = 15;
+		public static const TYPE_BOOL:int = 9;
+		public static const TYPE_NULL:int = 10;
+		public static const TYPE_STRING:int = 11;
+		public static const TYPE_NUMBER:int = 12;
+		public static const TYPE_INTEGER:int = 13;
+		public static const TYPE_DOUBLE:int = 14;
 
 		public static const ERROR:Token = new Token(TYPE_ERROR, "error");
 		public static const EOF:Token = new Token(TYPE_EOF, "eof");
@@ -27,8 +26,8 @@ package com.aemon.json{
 		public static const RBRACKET:Token = new Token(TYPE_RBRACKET, "]");
 		public static const COMMA:Token = new Token(TYPE_COMMA, ",");
 		public static const COLON:Token = new Token(TYPE_COLON, ":");
-		public static const TRUE:Token = new Token(TYPE_TRUE, "true");
-		public static const FALSE:Token = new Token(TYPE_FALSE, "false");
+		public static const TRUE:Token = new Token(TYPE_BOOL, "true");
+		public static const FALSE:Token = new Token(TYPE_BOOL, "false");
 		public static const NULL:Token = new Token(TYPE_NULL, "null");
 
 		public static function STRING(str:String):Token{ return new Token(TYPE_STRING, str); }

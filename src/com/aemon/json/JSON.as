@@ -478,15 +478,19 @@ package com.aemon.json{
 		private static doParse(jsonText:ByteArray, jsonTextLen:int)
 		{
 			var tok:Token;
+			var result:*;
 			
 			around_again:
-			switch (yajl_bs_current(hand->stateStack)) {
+			switch (stateStack[0]) {
 				case PARSE_STATE_PARSE_COMPLETE:
-				return yajl_status_ok;
+				return result;
+
 				case PARSE_STATE_LEXICAL_ERROR:
+				throw new Error("Lexical error.");
+
 				case PARSE_STATE_PARSE_ERROR:
-				hand->errorOffset = *offset;
-				return yajl_status_error;
+				throw new Error("Parse error.");
+
 				case PARSE_STATE_START:
 				case PARSE_STATE_MAP_NEED_VAL:
 				case PARSE_STATE_ARRAY_NEED_VAL:
@@ -499,54 +503,50 @@ package com.aemon.json{
 					* than state_start */
 					var stateToPush:int = PARSE_STATE_START;
 					
-					tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
-                        offset, &buf, &bufLen);
+					tok = lex(jsonText, jsonTextLen);
 					
-					switch (tok) {
-						case yajl_tok_eof:
-						return yajl_status_insufficient_data;
-						case yajl_tok_error:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_LEXICAL_ERROR);
-						goto around_again;
-						case yajl_tok_string:
+					switch (tok.type) {
+						case Token.TYPE_EOF:
+						throw new Error("Insufficient data");
+
+						case Token.TYPE_ERROR:
+						throw new Error("Lexer error: found error token.");
+
+						case Token.TYPE_STRING:
 						if (hand->callbacks && hand->callbacks->yajl_string) {
 							_CC_CHK(hand->callbacks->yajl_string(hand->ctx,
                                     buf, bufLen));
 						}
 						break;
-						case yajl_tok_string_with_escapes:
-						if (hand->callbacks && hand->callbacks->yajl_string) {
-							yajl_buf_clear(hand->decodeBuf);
-							yajl_string_decode(hand->decodeBuf, buf, bufLen);
-							_CC_CHK(hand->callbacks->yajl_string(
-                                    hand->ctx, yajl_buf_data(hand->decodeBuf),
-                                    yajl_buf_len(hand->decodeBuf)));
-						}
-						break;
-						case yajl_tok_bool:
+
+						case Token.TYPE_BOOL:
 						if (hand->callbacks && hand->callbacks->yajl_boolean) {
 							_CC_CHK(hand->callbacks->yajl_boolean(hand->ctx,
                                     *buf == 't'));
 						}
 						break;
-						case yajl_tok_null:
+
+						case Token.TYPE_NULL:
 						if (hand->callbacks && hand->callbacks->yajl_null) {
 							_CC_CHK(hand->callbacks->yajl_null(hand->ctx));
 						}
 						break;
-						case yajl_tok_left_bracket:
+
+						case Token.TYPE_LEFT_BRACKET:
 						if (hand->callbacks && hand->callbacks->yajl_start_map) {
 							_CC_CHK(hand->callbacks->yajl_start_map(hand->ctx));
 						}
 						stateToPush = PARSE_STATE_MAP_START;
 						break;
-						case yajl_tok_left_brace:
+
+						case Token.TYPE_LEFT_BRACE:
 						if (hand->callbacks && hand->callbacks->yajl_start_array) {
 							_CC_CHK(hand->callbacks->yajl_start_array(hand->ctx));
 						}
 						stateToPush = PARSE_STATE_ARRAY_START;
 						break;
-						case yajl_tok_integer:
+
+						case Token.TYPE_INTEGER:
 						/*
 						* note. strtol does not respect the length of
 						* the lexical token. in a corner case where the
@@ -569,89 +569,70 @@ package com.aemon.json{
 								yajl_buf_append(hand->decodeBuf, buf, bufLen);
 								buf = yajl_buf_data(hand->decodeBuf);
 								i = strtol((const char *) buf, NULL, 10);
-								if ((i == LONG_MIN || i == LONG_MAX) &&
-									errno == ERANGE)
-								{
-									yajl_bs_set(hand->stateStack,
-                                        PARSE_STATE_PARSE_ERROR);
-									hand->parseError = "integer overflow" ;
-									/* try to restore error offset */
-									if (*offset >= bufLen) *offset -= bufLen;
-									else *offset = 0;
-									goto around_again;
+								if ((i == LONG_MIN || i == LONG_MAX) && errno == ERANGE){
+									throw new Error("Parser error: integer overflow.");									
 								}
 								_CC_CHK(hand->callbacks->yajl_integer(hand->ctx,
                                         i));
 							}
 						}
 						break;
-						case yajl_tok_double:
+
+						case Token.TYPE_DOUBLE:
 						if (hand->callbacks) {
 							if (hand->callbacks->yajl_number) {
 								_CC_CHK(hand->callbacks->yajl_number(
                                         hand->ctx, (const char *) buf, bufLen));
-							} else if (hand->callbacks->yajl_double) {
+							} 
+							else if (hand->callbacks->yajl_double) {
 								double d = 0.0;
 								yajl_buf_clear(hand->decodeBuf);
 								yajl_buf_append(hand->decodeBuf, buf, bufLen);
 								buf = yajl_buf_data(hand->decodeBuf);
 								d = strtod((char *) buf, NULL);
-								if ((d == HUGE_VAL || d == -HUGE_VAL) &&
-									errno == ERANGE)
-								{
-									yajl_bs_set(hand->stateStack,
-                                        PARSE_STATE_PARSE_ERROR);
-									hand->parseError = "numeric (floating point) "
-                                    "overflow";
-									/* try to restore error offset */
-									if (*offset >= bufLen) *offset -= bufLen;
-									else *offset = 0;
-									goto around_again;
+								if ((d == HUGE_VAL || d == -HUGE_VAL) && errno == ERANGE){
+									throw new Error("Parser error: numeric (floating point) overflowfound error token.");
 								}
-								_CC_CHK(hand->callbacks->yajl_double(hand->ctx,
-                                        d));
+								_CC_CHK(hand->callbacks->yajl_double(hand->ctx, d));
 							}
 						}
 						break;
-						case yajl_tok_right_brace: {
-							if (yajl_bs_current(hand->stateStack) ==
-								PARSE_STATE_ARRAY_START)
+
+						case Token.TYPE_RIGHT_BRACE: {
+							if (stateStack[0] == PARSE_STATE_ARRAY_START)
 							{
 								if (hand->callbacks &&
 									hand->callbacks->yajl_end_array)
 								{
 									_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
 								}
-								yajl_bs_pop(hand->stateStack);
+								stateStack.shift();
 								goto around_again;
 							}
 							/* intentional fall-through */
 						}
-						case yajl_tok_colon:
-						case yajl_tok_comma:
-						case yajl_tok_right_bracket:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_ERROR);
-						hand->parseError =
-                        "unallowed token at this point in JSON text";
-						goto around_again;
+						case Token.TYPE_COLON:
+						case Token.TYPE_COMMA:
+
+						case Token.TYPE_RIGHT_BRACKET:
+						throw new Error("Parser error: unallowed token at this point in JSON text");
+
 						default:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_ERROR);
-						hand->parseError = "invalid token, internal error";
-						goto around_again;
+						throw new Error("Parser error: invalid token, internal error");
 					}
 					/* got a value. transition depends on the state we're in. */
 					{
 						yajl_state s = yajl_bs_current(hand->stateStack);
 						if (s == PARSE_STATE_START) {
-							yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_COMPLETE);
+							stateStack.unshift(PARSE_STATE_PARSE_COMPLETE);
 						} else if (s == PARSE_STATE_MAP_NEED_VAL) {
-							yajl_bs_set(hand->stateStack, PARSE_STATE_MAP_GOT_VAL);
+							stateStack.unshift(PARSE_STATE_MAP_GOT_VAL);
 						} else {
-							yajl_bs_set(hand->stateStack, PARSE_STATE_ARRAY_GOT_VAL);
+							stateStack.unshift(PARSE_STATE_ARRAY_GOT_VAL);
 						}
 					}
 					if (stateToPush != PARSE_STATE_START) {
-						yajl_bs_push(hand->stateStack, stateToPush);
+						stateStack.unshift(stateToPush);
 					}
 					
 					goto around_again;
@@ -661,122 +642,106 @@ package com.aemon.json{
 					/* only difference between these two states is that in
 					* start '}' is valid, whereas in need_key, we've parsed
 					* a comma, and a string key _must_ follow */
-					tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
-						offset, &buf, &bufLen);
-					switch (tok) {
-						case yajl_tok_eof:
-						return yajl_status_insufficient_data;
-						case yajl_tok_error:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_LEXICAL_ERROR);
-						goto around_again;
-						case yajl_tok_string_with_escapes:
-						if (hand->callbacks && hand->callbacks->yajl_map_key) {
-							yajl_buf_clear(hand->decodeBuf);
-							yajl_string_decode(hand->decodeBuf, buf, bufLen);
-							buf = yajl_buf_data(hand->decodeBuf);
-							bufLen = yajl_buf_len(hand->decodeBuf);
-						}
-						/* intentional fall-through */
-						case yajl_tok_string:
+					tok = lex(jsonText, jsonTextLen);
+
+					switch (tok.type) {
+						case Token.TYPE_EOF:
+						throw new Error("Insufficient data.");
+
+						case Token.TYPE_ERROR:
+						throw new Error("Lexer error: found error token.");
+
+						case Token.TYPE_STRING:
 						if (hand->callbacks && hand->callbacks->yajl_map_key) {
 							_CC_CHK(hand->callbacks->yajl_map_key(hand->ctx, buf,
 									bufLen));
 						}
-						yajl_bs_set(hand->stateStack, yajl_state_map_sep);
+						stateStack.unshift(PARSE_STATE_MAP_SEP);
 						goto around_again;
-						case yajl_tok_right_bracket:
-						if (yajl_bs_current(hand->stateStack) ==
-							PARSE_STATE_MAP_START)
+
+						case Token.TYPE_RIGHT_BRACKET:
+						if (stateStack[0] == PARSE_STATE_MAP_START)
 						{
 							if (hand->callbacks && hand->callbacks->yajl_end_map) {
 								_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
 							}
-							yajl_bs_pop(hand->stateStack);
+							stateStack.shift();
 							goto around_again;
 						}
 						default:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_ERROR);
-						hand->parseError =
-						"invalid object key (must be a string)";
-						goto around_again;
+						throw new Error("Parser error: invalid object key (must be a string)");
 					}
 				}
-				case yajl_state_map_sep: {
-					tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
-						offset, &buf, &bufLen);
-					switch (tok) {
-						case yajl_tok_colon:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_MAP_NEED_VAL);
+				case PARSE_STATE_MAP_SEP: {
+					tok = lex(jsonText, jsonTextLen);
+
+					switch (tok.type) {
+						case Token.TYPE_COLON:
+						stateStack.unshift(PARSE_STATE_MAP_NEED_VAL);
 						goto around_again;
-						case yajl_tok_eof:
-						return yajl_status_insufficient_data;
-						case yajl_tok_error:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_LEXICAL_ERROR);
-						goto around_again;
+
+						case Token.TYPE_EOF:
+						throw new Error("Insufficient data.");
+
+						case Token.TYPE_ERROR:
+						throw new Error("Lexer error: found error token.");
+
 						default:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_ERROR);
-						hand->parseError = "object key and value must "
-						"be separated by a colon (':')";
-						goto around_again;
+						throw new Error("Parser error: object key and value must be separated by a colon (':').");
 					}
 				}
 				case PARSE_STATE_MAP_GOT_VAL: {
-					tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
-						offset, &buf, &bufLen);
-					switch (tok) {
-						case yajl_tok_right_bracket:
+					tok = lex(jsonText, jsonTextLen);
+
+					switch (tok.type) {
+						case Token.TYPE_RIGHT_BRACKET:
 						if (hand->callbacks && hand->callbacks->yajl_end_map) {
 							_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
 						}
-						yajl_bs_pop(hand->stateStack);
+						stateStack.shift();
 						goto around_again;
-						case yajl_tok_comma:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_MAP_NEED_KEY);
+
+						case Token.TYPE_COMMA:
+						stateStack.unshift(PARSE_STATE_MAP_NEED_KEY);
 						goto around_again;
-						case yajl_tok_eof:
-						return yajl_status_insufficient_data;
-						case yajl_tok_error:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_LEXICAL_ERROR);
-						goto around_again;
+
+						case Token.TYPE_EOF:
+						throw new Error("Insufficient data.");
+
+						case Token.TYPE_ERROR:
+						throw new Error("Lexer error: found error token.");
+
 						default:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_ERROR);
-						hand->parseError = "after key and value, inside map, "
-						"I expect ',' or '}'";
-						/* try to restore error offset */
-						if (*offset >= bufLen) *offset -= bufLen;
-						else *offset = 0;
-						goto around_again;
+						throw new Error("Parse error: after key and value, inside map, I expect ',' or '}'");
 					}
 				}
 				case PARSE_STATE_ARRAY_GOT_VAL: {
-					tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
-						offset, &buf, &bufLen);
-					switch (tok) {
-						case yajl_tok_right_brace:
+					tok = lex(jsonText, jsonTextLen);
+
+					switch (tok.type) {
+						case Token.TYPE_RIGHT_BRACE:
 						if (hand->callbacks && hand->callbacks->yajl_end_array) {
 							_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
 						}
-						yajl_bs_pop(hand->stateStack);
+						stateStack.shift();
 						goto around_again;
-						case yajl_tok_comma:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_ARRAY_NEED_VAL);
+
+						case Token.TYPE_COMMA:
+						stateStack.unshift(PARSE_STATE_ARRAY_NEED_VAL);
 						goto around_again;
-						case yajl_tok_eof:
-						return yajl_status_insufficient_data;
-						case yajl_tok_error:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_LEXICAL_ERROR);
-						goto around_again;
+
+						case Token.TYPE_EOF:
+						throw new Error("Insufficient data");
+
+						case Token.TYPE_ERROR:
+						throw new Error("Lexical error: found error token.");
+
 						default:
-						yajl_bs_set(hand->stateStack, PARSE_STATE_PARSE_ERROR);
-						hand->parseError =
-						"after array element, I expect ',' or ']'";
-						goto around_again;
+						throw new Error("Parser error: after array element, I expect ',' or ']'");
 					}
 				}
 			}
-			
-			abort();
-			return yajl_status_error;
+			return result;
 		}
 
 
