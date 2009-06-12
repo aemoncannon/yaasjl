@@ -109,6 +109,24 @@ package com.aemon.json{
 		private static const PARSE_STATE_ARRAY_GOT_VAL:int = 10;
 		private static const PARSE_STATE_ARRAY_NEED_VAL:int = 11;
 
+		private static function parseStateToString(s:int):String{
+			switch(s){
+				case PARSE_STATE_START: return "PARSE_STATE_START";
+				case PARSE_STATE_PARSE_COMPLETE: return "PARSE_STATE_PARSE_COMPLETE";
+				case PARSE_STATE_PARSE_ERROR: return "PARSE_STATE_PARSE_ERROR";
+				case PARSE_STATE_LEXICAL_ERROR: return "PARSE_STATE_LEXICAL_ERROR";
+				case PARSE_STATE_MAP_START: return "PARSE_STATE_MAP_START";
+				case PARSE_STATE_MAP_SEP: return "PARSE_STATE_MAP_SEP";
+				case PARSE_STATE_MAP_NEED_VAL: return "PARSE_STATE_MAP_NEED_VAL";
+				case PARSE_STATE_MAP_GOT_VAL: return "PARSE_STATE_MAP_GOT_VAL";
+				case PARSE_STATE_MAP_NEED_KEY: return "PARSE_STATE_MAP_NEED_KEY";
+				case PARSE_STATE_ARRAY_START: return "PARSE_STATE_ARRAY_START";
+				case PARSE_STATE_ARRAY_GOT_VAL: return "PARSE_STATE_ARRAY_GOT_VAL";
+				case PARSE_STATE_ARRAY_NEED_VAL: return "PARSE_STATE_ARRAY_NEED_VAL";
+			}
+			return "Unknown parse state!";
+		}
+
 
 		private static function readChar(jsonText:ByteArray):int{
 			return jsonText.readByte();
@@ -382,7 +400,7 @@ package com.aemon.json{
 			jsonText.position = startOffset;
 			var s:String = jsonText.readUTFBytes(p - startOffset);
 			jsonText.position = p;
-			return Token.NUMBER(parseFloat(s));
+			return Token.DOUBLE(parseFloat(s));
 		}
 
 
@@ -478,14 +496,19 @@ package com.aemon.json{
 		private static function doParse(jsonText:ByteArray, jsonTextLen:int):*
 		{
 			var tok:Token;
-			var result:*;
+			var result:* = "dude";
+
+			var curVal:*;
+			var curKey:String;
+			var arrayStack:Array = [];
+			var mapStack:Object = [];
+
 			var stateStack:Array = [PARSE_STATE_START];
-			var aroundAgain:Boolean = true;
-			
-			while(aroundAgain){
-				aroundAgain = false;
+
+			aroundAgain: while(true){
 				switch (stateStack[stateStack.length - 1]) {
 					case PARSE_STATE_PARSE_COMPLETE:
+					result = curVal;
 					return result;
 
 					case PARSE_STATE_LEXICAL_ERROR:
@@ -498,25 +521,300 @@ package com.aemon.json{
 					case PARSE_STATE_MAP_NEED_VAL:
 					case PARSE_STATE_ARRAY_NEED_VAL:
 					case PARSE_STATE_ARRAY_START: {
-					
+						/* for arrays and maps, we advance the state for this
+						* depth, then push the state of the next depth.
+						* If an error occurs during the parsing of the nesting
+						* enitity, the state at this level will not matter.
+						* a state that needs pushing will be anything other
+						* than state_start */
+						var stateToPush:int = PARSE_STATE_START;
+						
+						tok = lex(jsonText, jsonTextLen);
+
+						switch (tok.type) {
+							case Token.TYPE_EOF:
+							throw new Error("Insufficient data");
+
+							case Token.TYPE_ERROR:
+							throw new Error("Lexer error: found error token.");
+
+							case Token.TYPE_STRING:
+							curVal = tok.data;
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_string) {
+							//	_CC_CHK(hand->callbacks->yajl_string(hand->ctx,
+							//			buf, bufLen));
+							//}
+							break;
+
+							case Token.TYPE_BOOL:
+							curVal = tok.data;
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_boolean) {
+							//	_CC_CHK(hand->callbacks->yajl_boolean(hand->ctx,
+							//			*buf == 't'));
+							//}
+							break;
+
+							case Token.TYPE_NULL:
+							curVal = tok.data;
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_null) {
+							//	_CC_CHK(hand->callbacks->yajl_null(hand->ctx));
+							//}
+							break;
+
+							case Token.TYPE_LBRACE:
+							mapStack.push({});
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_start_map) {
+							//	_CC_CHK(hand->callbacks->yajl_start_map(hand->ctx));
+							//}
+							stateToPush = PARSE_STATE_MAP_START;
+							break;
+
+							case Token.TYPE_LBRACKET:
+							arrayStack.push([]);
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_start_array) {
+							//	_CC_CHK(hand->callbacks->yajl_start_array(hand->ctx));
+							//}
+							stateToPush = PARSE_STATE_ARRAY_START;
+							break;
+
+							case Token.TYPE_INTEGER:
+							curVal = tok.data;
+							/*
+							* note. strtol does not respect the length of
+							* the lexical token. in a corner case where the
+							* lexed number is a integer with a trailing zero,
+							* immediately followed by the end of buffer,
+							* sscanf could run off into oblivion and cause a
+							* crash. for this reason we copy the integer
+							* (and doubles), into our parse buffer (the same
+							* one used for unescaping strings), before
+							* calling strtol. yajl_buf ensures null padding,
+							* so we're safe.
+							*/
+							//TODO
+							//if (hand->callbacks) {
+							//	if (hand->callbacks->yajl_number) {
+							//		_CC_CHK(hand->callbacks->yajl_number(
+							//				hand->ctx,(const char *) buf, bufLen));
+							//	} else if (hand->callbacks->yajl_integer) {
+							//		long int i = 0;
+							//		yajl_buf_clear(hand->decodeBuf);
+							//		yajl_buf_append(hand->decodeBuf, buf, bufLen);
+							//		buf = yajl_buf_data(hand->decodeBuf);
+							//		i = strtol((const char *) buf, NULL, 10);
+							//		if ((i == LONG_MIN || i == LONG_MAX) && errno == ERANGE){
+							//			throw new Error("Parser error: integer overflow.");									
+							//		}
+							//		_CC_CHK(hand->callbacks->yajl_integer(hand->ctx,
+							//				i));
+							//	}
+							//}
+							break;
+
+							case Token.TYPE_DOUBLE:
+							curVal = tok.data;
+							//TODO
+							//if (hand->callbacks) {
+							//	if (hand->callbacks->yajl_number) {
+							//		_CC_CHK(hand->callbacks->yajl_number(
+							//				hand->ctx, (const char *) buf, bufLen));
+							//	} 
+							//	else if (hand->callbacks->yajl_double) {
+							//		double d = 0.0;
+							//		yajl_buf_clear(hand->decodeBuf);
+							//		yajl_buf_append(hand->decodeBuf, buf, bufLen);
+							//		buf = yajl_buf_data(hand->decodeBuf);
+							//		d = strtod((char *) buf, NULL);
+							//		if ((d == HUGE_VAL || d == -HUGE_VAL) && errno == ERANGE){
+							//			throw new Error("Parser error: numeric (floating point) overflowfound error token.");
+							//		}
+							//		_CC_CHK(hand->callbacks->yajl_double(hand->ctx, d));
+							//	}
+							//}
+							break;
+
+							case Token.TYPE_RBRACKET: {
+								curVal = arrayStack.pop();
+								switch (stateStack[stateStack.length - 1]) {
+									case PARSE_STATE_ARRAY_START:{
+										// TODO
+										//if (hand->callbacks &&
+										//	hand->callbacks->yajl_end_array)
+										//{
+										//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
+										//}
+										stateStack.pop();
+										continue aroundAgain;
+									}
+								}
+								break;
+							}
+							
+							case Token.TYPE_COLON:
+							case Token.TYPE_COMMA:
+
+							case Token.TYPE_RBRACE:
+							throw new Error("Parser error: unallowed token at this point in JSON text: " + tok);
+
+							default:
+							throw new Error("Parser error: invalid token, internal error");
+						}
+
+
+						/* got a value. transition depends on the state we're in. */
+						{
+							var s:int = stateStack[stateStack.length - 1];
+							if (s == PARSE_STATE_START) {
+								stateStack[stateStack.length - 1] = PARSE_STATE_PARSE_COMPLETE;
+							} 
+							else if (s == PARSE_STATE_MAP_NEED_VAL){
+								mapStack[mapStack.length - 1][curKey] = curVal;
+								stateStack[stateStack.length - 1] = PARSE_STATE_MAP_GOT_VAL;
+							} 
+							else {
+								arrayStack[arrayStack.length - 1].push(curVal);
+								stateStack[stateStack.length - 1] = PARSE_STATE_ARRAY_GOT_VAL;
+							}
+						}
+
+						if (stateToPush != PARSE_STATE_START) {
+							stateStack.push(stateToPush);
+						}
+						
+						continue aroundAgain;
 					}
 					case PARSE_STATE_MAP_START:
 					case PARSE_STATE_MAP_NEED_KEY: {
-					
+						/* only difference between these two states is that in
+						* start '}' is valid, whereas in need_key, we've parsed
+						* a comma, and a string key _must_ follow */
+						tok = lex(jsonText, jsonTextLen);
+
+						switch (tok.type) {
+							case Token.TYPE_EOF:
+							throw new Error("Insufficient data.");
+
+							case Token.TYPE_ERROR:
+							throw new Error("Lexer error: found error token.");
+
+							case Token.TYPE_STRING:
+							curKey = tok.data;
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_map_key) {
+							//	_CC_CHK(hand->callbacks->yajl_map_key(hand->ctx, buf,
+							//			bufLen));
+							//}
+							stateStack[stateStack.length - 1] = PARSE_STATE_MAP_SEP;
+							continue aroundAgain;
+
+							case Token.TYPE_RBRACE:
+							switch(stateStack[stateStack.length - 1]){
+								case PARSE_STATE_MAP_START:{
+									curVal = mapStack.pop();
+									//TODO
+									//if (hand->callbacks && hand->callbacks->yajl_end_map) {
+									//	_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
+									//}
+									stateStack.pop();
+									continue aroundAgain;
+								}
+							}
+
+							default:
+							throw new Error("Parser error: invalid object key (must be a string)");
+						}
 					}
 					case PARSE_STATE_MAP_SEP: {
-					
+						tok = lex(jsonText, jsonTextLen);
+
+						switch (tok.type) {
+							case Token.TYPE_COLON:
+							stateStack[stateStack.length - 1] = PARSE_STATE_MAP_NEED_VAL;
+							continue aroundAgain;
+
+							case Token.TYPE_EOF:
+							throw new Error("Insufficient data.");
+
+							case Token.TYPE_ERROR:
+							throw new Error("Lexer error: found error token.");
+
+							default:
+							throw new Error("Parser error: object key and value must be separated by a colon (':').");
+						}
 					}
 					case PARSE_STATE_MAP_GOT_VAL: {
-					
+						tok = lex(jsonText, jsonTextLen);
+
+						switch (tok.type) {
+							case Token.TYPE_RBRACE:{
+								curVal = mapStack.pop();
+								//TODO
+								//if (hand->callbacks && hand->callbacks->yajl_end_map) {
+								//	_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
+								//}
+								stateStack.pop();
+								continue aroundAgain;
+							}
+
+							case Token.TYPE_COMMA:
+							stateStack[stateStack.length - 1] = PARSE_STATE_MAP_NEED_KEY;
+							continue aroundAgain;
+
+							case Token.TYPE_EOF:
+							throw new Error("Insufficient data.");
+
+							case Token.TYPE_ERROR:
+							throw new Error("Lexer error: found error token.");
+
+							default:
+							throw new Error("Parse error: after key and value, inside map, I expect ',' or '}'");
+						}
 					}
 					case PARSE_STATE_ARRAY_GOT_VAL: {
-					
+						tok = lex(jsonText, jsonTextLen);
+
+						switch (tok.type) {
+							case Token.TYPE_RBRACKET:
+							curVal = arrayStack.pop();
+							//TODO
+							//if (hand->callbacks && hand->callbacks->yajl_end_array) {
+							//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
+							//}
+							stateStack.pop();
+							continue aroundAgain;
+
+							case Token.TYPE_COMMA:
+							stateStack[stateStack.length - 1] = PARSE_STATE_ARRAY_NEED_VAL;
+							continue aroundAgain;
+
+							case Token.TYPE_EOF:
+							throw new Error("Insufficient data");
+
+							case Token.TYPE_ERROR:
+							throw new Error("Lexical error: found error token.");
+
+							default:
+							throw new Error("Parser error: after array element, I expect ',' or ']'");
+						}
 					}
 
-				}// end main switch
-			}// end while
+				} // end main switch
+				break;
+			} // end loop
+
 			return result;
+		}
+
+
+		private static function traceStateStack(stack:Array):void{
+			trace("[" + stack.map(function(ea:int, i:int, a:Array):String{ 
+						return parseStateToString(ea); 
+					}).join(", ")  + "]");
 		}
 
 
@@ -532,9 +830,8 @@ package com.aemon.json{
 			return tok;
 		}
 
-
-		public static function parse(bytes:ByteArray, len:int):void{
-			doParse(bytes, len);
+		public static function parse(bytes:ByteArray, len:int):*{
+			return doParse(bytes, len);
 		}
 
 

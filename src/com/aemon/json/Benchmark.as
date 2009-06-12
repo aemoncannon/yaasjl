@@ -16,22 +16,25 @@ package com.aemon.json{
 			test1_b.writeUTFBytes(test1);
 			test1_b.position = 0;
 
-			var t:Number = getTimer();
-			for(var i:int = 0; i < 100; i++){
-				new JSONDecoder(test1);
-			}
-			var r1:Number = getTimer() - t;
+// 			var t:Number = getTimer();
+// 			for(var i:int = 0; i < 100; i++){
+// 				new JSONDecoder(test1);
+// 			}
+// 			var r1:Number = getTimer() - t;
 
 
-			t = getTimer();
-			for(i = 0; i < 100; i++){
-				JSON.parse(test1_b, test1_b.length);
-				test1_b.position = 0;
-			}
-			var r2:Number = getTimer() - t;
+// 			t = getTimer();
+// 			for(i = 0; i < 100; i++){
+// 				JSON.parse(test1_b, test1_b.length);
+// 				test1_b.position = 0;
+// 			}
+// 			var r2:Number = getTimer() - t;
 
+			var val:* = JSON.parse(test1_b, test1_b.length);
+			trace(val);
+			trace(new JSONEncoder(val).getString());
 
-			throw new Error("as3corelibtime: " + r1 + "     newtime: " + r2);
+//			throw new Error("as3corelibtime: " + r1 + "     newtime: " + r2);
 		}
 
 

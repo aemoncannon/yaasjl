@@ -43,7 +43,26 @@ package com.aemon.json{
 			this.data = data;
 		}
 
-		public function toString():String{ return String(data); }
+		public function toString():String{ 
+			switch(type){
+				case TYPE_ERROR: return "ERROR";
+				case TYPE_EOF: return "EOF";
+				case TYPE_LBRACE: return "LBRACE";
+				case TYPE_RBRACE: return "RBRACE";
+				case TYPE_LBRACKET: return "LBRACKET";
+				case TYPE_RBRACKET: return "RBRACKET";
+				case TYPE_COMMA: return "COMMA";
+				case TYPE_COLON: return "COLON";
+				case TYPE_BOOL: return "BOOL";
+				case TYPE_NULL: return "NULL";
+				case TYPE_STRING: return "STRING( " + data + ")";
+				case TYPE_NUMBER: return "NUMBER( " + data + ")";
+				case TYPE_INTEGER: return "INTEGER( " + data + ")";
+				case TYPE_DOUBLE: return "DOUBLE( " + data + ")";
+			}
+			return "Unknown token!"
+		}
+
 
 	}
 
