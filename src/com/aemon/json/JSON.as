@@ -596,6 +596,8 @@ package com.aemon.json{
 							* calling strtol. yajl_buf ensures null padding,
 							* so we're safe.
 							*/
+
+
 							//TODO
 							//if (hand->callbacks) {
 							//	if (hand->callbacks->yajl_number) {
@@ -639,9 +641,9 @@ package com.aemon.json{
 							break;
 
 							case Token.TYPE_RBRACKET: {
-								curVal = arrayStack.pop();
 								switch (stateStack[stateStack.length - 1]) {
 									case PARSE_STATE_ARRAY_START:{
+										curVal = arrayStack.pop();
 										// TODO
 										//if (hand->callbacks &&
 										//	hand->callbacks->yajl_end_array)
@@ -652,7 +654,6 @@ package com.aemon.json{
 										continue aroundAgain;
 									}
 								}
-								break;
 							}
 							
 							case Token.TYPE_COLON:
@@ -785,6 +786,7 @@ package com.aemon.json{
 							//if (hand->callbacks && hand->callbacks->yajl_end_array) {
 							//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
 							//}
+							throw stateStackToString(stateStack);
 							stateStack.pop();
 							continue aroundAgain;
 
@@ -811,10 +813,10 @@ package com.aemon.json{
 		}
 
 
-		private static function traceStateStack(stack:Array):void{
-			trace("[" + stack.map(function(ea:int, i:int, a:Array):String{ 
-						return parseStateToString(ea); 
-					}).join(", ")  + "]");
+		private static function stateStackToString(stack:Array):String{
+			return "[" + stack.map(function(ea:int, i:int, a:Array):String{ 
+					return parseStateToString(ea); 
+				}).join(", ")  + "]";
 		}
 
 

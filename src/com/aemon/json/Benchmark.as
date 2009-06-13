@@ -34,6 +34,8 @@ package com.aemon.json{
 			trace(val);
 			trace(new JSONEncoder(val).getString());
 
+			throw (new JSONEncoder(val).getString());
+
 //			throw new Error("as3corelibtime: " + r1 + "     newtime: " + r2);
 		}
 

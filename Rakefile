@@ -1,12 +1,11 @@
 DEBUG = true
 
-MXMLC = PLATFORM =~ /win32/ ? "mxmlc.exe" : "mxmlc"
-COMPC = PLATFORM =~ /win32/ ? "compc.exe" : "compc"
-ASDOC = PLATFORM =~ /win32/ ? "asdoc.exe" : "asdoc"
+MXMLC = PLATFORM =~ /win32/ ? "mxmlc.exe -target-player=10.0.0" : "mxmlc -target-player=10.0.0"
+COMPC = PLATFORM =~ /win32/ ? "compc.exe -target-player=10.0.0" : "compc -target-player=10.0.0"
 SEVEN_ZIP = PLATFORM =~ /win32/ ? "7z.exe" : "7z"
 
 ASDOC_OUTPUT_DIR = "asdocs"
-DEBUG_PROJECTOR = PLATFORM =~ /win32/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector_"
+DEBUG_PROJECTOR = PLATFORM =~ /win32/ ? "sa_flashplayer_9_debug.exe" : "~/bin/flashplayer_debug_projector_10"
 
 SHARED_CLASS_PATH = ["src"]
 
@@ -15,7 +14,7 @@ ASDOC_OPTIONS = ["-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}",
                  "-library-path+=./lib/FlexUnit.swc",
                  "-compiler.library-path+=./lib/as3corelib.swc",
                  "-exclude-classes com.adobe.net.URI", # <-- Hairy syntax breaks asdoc.
-                 "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\""
+#                 "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\""
                 ]
 
 COMPILE_OPTIONS = [
@@ -30,7 +29,7 @@ COMPILE_OPTIONS = [
                    "-compiler.library-path+=./lib/FlexUnit.swc",
                    "-compiler.library-path+=./lib/as3corelib.swc",
                    "-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}",
-                   "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\"",
+#                   "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\"", 
                    "-default-size 1280 720"
                   ]
 
@@ -43,7 +42,7 @@ SWC_OPTIONS = [
                "-source-path #{SHARED_CLASS_PATH.join(" ")}",
                "-compiler.library-path+=./lib/as3corelib.swc",
                "-compiler.library-path+=./lib/OVP_2_0_0.swc",
-               "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\""
+#               "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\""
               ]
 
 SHARED_SOURCES = FileList["./Rakefile"] + FileList["./src/**/*"] 
