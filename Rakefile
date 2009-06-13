@@ -1,7 +1,7 @@
 DEBUG = true
 
-MXMLC = PLATFORM =~ /win32/ ? "mxmlc.exe -target-player=10.0.0" : "mxmlc -target-player=10.0.0"
-COMPC = PLATFORM =~ /win32/ ? "compc.exe -target-player=10.0.0" : "compc -target-player=10.0.0"
+MXMLC = PLATFORM =~ /win32/ ? "mxmlc.exe" : "mxmlc"
+COMPC = PLATFORM =~ /win32/ ? "compc.exe" : "compc"
 SEVEN_ZIP = PLATFORM =~ /win32/ ? "7z.exe" : "7z"
 
 ASDOC_OUTPUT_DIR = "asdocs"

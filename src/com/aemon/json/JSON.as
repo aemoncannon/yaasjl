@@ -565,7 +565,9 @@ package com.aemon.json{
 							break;
 
 							case Token.TYPE_LBRACE:
-							mapStack.push({});
+							var m:Object = {};
+							curVal = m;
+							mapStack.push(m);
 							//TODO
 							//if (hand->callbacks && hand->callbacks->yajl_start_map) {
 							//	_CC_CHK(hand->callbacks->yajl_start_map(hand->ctx));
@@ -574,7 +576,9 @@ package com.aemon.json{
 							break;
 
 							case Token.TYPE_LBRACKET:
-							arrayStack.push([]);
+							var a:Object = [];
+							curVal = a;
+							arrayStack.push(a);
 							//TODO
 							//if (hand->callbacks && hand->callbacks->yajl_start_array) {
 							//	_CC_CHK(hand->callbacks->yajl_start_array(hand->ctx));
@@ -716,7 +720,6 @@ package com.aemon.json{
 							case Token.TYPE_RBRACE:
 							switch(stateStack[stateStack.length - 1]){
 								case PARSE_STATE_MAP_START:{
-									curVal = mapStack.pop();
 									//TODO
 									//if (hand->callbacks && hand->callbacks->yajl_end_map) {
 									//	_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
@@ -781,12 +784,10 @@ package com.aemon.json{
 
 						switch (tok.type) {
 							case Token.TYPE_RBRACKET:
-							curVal = arrayStack.pop();
 							//TODO
 							//if (hand->callbacks && hand->callbacks->yajl_end_array) {
 							//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
 							//}
-							throw stateStackToString(stateStack);
 							stateStack.pop();
 							continue aroundAgain;
 

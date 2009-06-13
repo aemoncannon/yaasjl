@@ -7,18 +7,7 @@
 	     import flexunit.framework.*;
 	     private function ready():void {
 	     var suite:TestSuite = new TestSuite();	     
-	     suite.addTestSuite(SimpleE2ETest);
-	     suite.addTestSuite(ViewE2ETest);
-	     suite.addTestSuite(EventDispatchingE2ETest);
-	     suite.addTestSuite(AnimationE2ETest);
-	     suite.addTestSuite(TextE2ETest);
-	     suite.addTestSuite(UtilTest);
-	     suite.addTestSuite(VideoE2ETest); 
-	     suite.addTestSuite(SoundE2ETest); 
-	     suite.addTestSuite(ImageE2ETest); 
-	     suite.addTestSuite(AppLifecycleE2ETest); 
-	     suite.addTestSuite(AppHTTPRequestE2ETest); 
-	     suite.addTestSuite(LocalObjectE2ETest); 
+	     suite.addTestSuite(ParseTest);
 	     testRunner.test = suite;
 	     testRunner.startTest();
 	     }

@@ -16,27 +16,49 @@ package com.aemon.json{
 			test1_b.writeUTFBytes(test1);
 			test1_b.position = 0;
 
-// 			var t:Number = getTimer();
-// 			for(var i:int = 0; i < 100; i++){
-// 				new JSONDecoder(test1);
-// 			}
-// 			var r1:Number = getTimer() - t;
+			var t:Number = getTimer();
+			for(var i:int = 0; i < 100; i++){
+				new JSONDecoder(test1);
+			}
+			var r1:Number = getTimer() - t;
 
 
-// 			t = getTimer();
-// 			for(i = 0; i < 100; i++){
-// 				JSON.parse(test1_b, test1_b.length);
-// 				test1_b.position = 0;
-// 			}
-// 			var r2:Number = getTimer() - t;
+			t = getTimer();
+			for(i = 0; i < 100; i++){
+				JSON.parse(test1_b, test1_b.length);
+				test1_b.position = 0;
+			}
+			var r2:Number = getTimer() - t;
 
-			var val:* = JSON.parse(test1_b, test1_b.length);
-			trace(val);
-			trace(new JSONEncoder(val).getString());
+			// 			t = getTimer();
+			// 			var a:Array = [];
+			// 			for(i = 0; i < 10000; i++){
+			// 				a.push(i);
+			// 			}
+			// 			for(i = 0; i < 10000; i++){
+			// 				a.pop();
+			// 			}
+			// 			var r3:Number = getTimer() - t;
 
-			throw (new JSONEncoder(val).getString());
+			// 			t = getTimer();
+			// 			a = [];
+			// 			for(i = 0; i < 10000; i++){
+			// 				a.unshift(i);
+			// 			}
+			// 			for(i = 0; i < 10000; i++){
+			// 				a.shift();
+			// 			}
+			// 			var r4:Number = getTimer() - t;
 
-//			throw new Error("as3corelibtime: " + r1 + "     newtime: " + r2);
+			//			throw new Error("push/pop: " + r3 + "     unshift/shift: " + r4);
+
+			// 			var val:* = JSON.parse(test1_b, test1_b.length);
+			// 			trace(val);
+			// 			trace(new JSONEncoder(val).getString());
+
+			//			throw (new JSONEncoder(val).getString());
+
+			throw new Error("as3corelibtime: " + r1 + "     newtime: " + r2);
 		}
 
 
