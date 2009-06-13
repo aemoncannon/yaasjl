@@ -400,7 +400,10 @@ package com.aemon.json{
 			jsonText.position = startOffset;
 			var s:String = jsonText.readUTFBytes(p - startOffset);
 			jsonText.position = p;
-			return Token.DOUBLE(parseFloat(s));
+
+			// TODO ints and doubles are getting smooshed into Numbers. 
+			// They should be seperate tokens.
+			return Token.DOUBLE(Number(s));
 		}
 
 
@@ -543,38 +546,20 @@ package com.aemon.json{
 
 							case Token.TYPE_STRING:
 							curVal = tok.data;
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_string) {
-							//	_CC_CHK(hand->callbacks->yajl_string(hand->ctx,
-							//			buf, bufLen));
-							//}
 							break;
 
 							case Token.TYPE_BOOL:
 							curVal = tok.data;
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_boolean) {
-							//	_CC_CHK(hand->callbacks->yajl_boolean(hand->ctx,
-							//			*buf == 't'));
-							//}
 							break;
 
 							case Token.TYPE_NULL:
 							curVal = tok.data;
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_null) {
-							//	_CC_CHK(hand->callbacks->yajl_null(hand->ctx));
-							//}
 							break;
 
 							case Token.TYPE_LBRACE:
 							var m:Object = {};
 							curVal = m;
 							mapToPush = m;
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_start_map) {
-							//	_CC_CHK(hand->callbacks->yajl_start_map(hand->ctx));
-							//}
 							stateToPush = PARSE_STATE_MAP_START;
 							break;
 
@@ -582,81 +567,21 @@ package com.aemon.json{
 							var a:Array = [];
 							curVal = a;
 							arrayToPush = a;
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_start_array) {
-							//	_CC_CHK(hand->callbacks->yajl_start_array(hand->ctx));
-							//}
 							stateToPush = PARSE_STATE_ARRAY_START;
 							break;
 
 							case Token.TYPE_INTEGER:
 							curVal = tok.data;
-							/*
-							* note. strtol does not respect the length of
-							* the lexical token. in a corner case where the
-							* lexed number is a integer with a trailing zero,
-							* immediately followed by the end of buffer,
-							* sscanf could run off into oblivion and cause a
-							* crash. for this reason we copy the integer
-							* (and doubles), into our parse buffer (the same
-							* one used for unescaping strings), before
-							* calling strtol. yajl_buf ensures null padding,
-							* so we're safe.
-							*/
-
-
-							//TODO
-							//if (hand->callbacks) {
-							//	if (hand->callbacks->yajl_number) {
-							//		_CC_CHK(hand->callbacks->yajl_number(
-							//				hand->ctx,(const char *) buf, bufLen));
-							//	} else if (hand->callbacks->yajl_integer) {
-							//		long int i = 0;
-							//		yajl_buf_clear(hand->decodeBuf);
-							//		yajl_buf_append(hand->decodeBuf, buf, bufLen);
-							//		buf = yajl_buf_data(hand->decodeBuf);
-							//		i = strtol((const char *) buf, NULL, 10);
-							//		if ((i == LONG_MIN || i == LONG_MAX) && errno == ERANGE){
-							//			throw new Error("Parser error: integer overflow.");									
-							//		}
-							//		_CC_CHK(hand->callbacks->yajl_integer(hand->ctx,
-							//				i));
-							//	}
-							//}
 							break;
 
 							case Token.TYPE_DOUBLE:
 							curVal = tok.data;
-							//TODO
-							//if (hand->callbacks) {
-							//	if (hand->callbacks->yajl_number) {
-							//		_CC_CHK(hand->callbacks->yajl_number(
-							//				hand->ctx, (const char *) buf, bufLen));
-							//	} 
-							//	else if (hand->callbacks->yajl_double) {
-							//		double d = 0.0;
-							//		yajl_buf_clear(hand->decodeBuf);
-							//		yajl_buf_append(hand->decodeBuf, buf, bufLen);
-							//		buf = yajl_buf_data(hand->decodeBuf);
-							//		d = strtod((char *) buf, NULL);
-							//		if ((d == HUGE_VAL || d == -HUGE_VAL) && errno == ERANGE){
-							//			throw new Error("Parser error: numeric (floating point) overflowfound error token.");
-							//		}
-							//		_CC_CHK(hand->callbacks->yajl_double(hand->ctx, d));
-							//	}
-							//}
 							break;
 
 							case Token.TYPE_RBRACKET: {
 								switch (stateStack[stateStack.length - 1]) {
 									case PARSE_STATE_ARRAY_START:{
 										curVal = arrayStack.pop();
-										// TODO
-										//if (hand->callbacks &&
-										//	hand->callbacks->yajl_end_array)
-										//{
-										//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
-										//}
 										stateStack.pop();
 										continue aroundAgain;
 									}
@@ -673,8 +598,7 @@ package com.aemon.json{
 							throw new Error("Parser error: invalid token, internal error");
 						}
 
-
-						/* got a value. transition depends on the state we're in. */
+						/* Got a value. transition depends on the state we're in. */
 						{
 							var s:int = stateStack[stateStack.length - 1];
 							if (s == PARSE_STATE_START) {
@@ -718,11 +642,6 @@ package com.aemon.json{
 
 							case Token.TYPE_STRING:
 							curKey = tok.data;
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_map_key) {
-							//	_CC_CHK(hand->callbacks->yajl_map_key(hand->ctx, buf,
-							//			bufLen));
-							//}
 							stateStack[stateStack.length - 1] = PARSE_STATE_MAP_SEP;
 							continue aroundAgain;
 
@@ -730,10 +649,6 @@ package com.aemon.json{
 							switch(stateStack[stateStack.length - 1]){
 								case PARSE_STATE_MAP_START:{
 									curVal = mapStack.pop();
-									//TODO
-									//if (hand->callbacks && hand->callbacks->yajl_end_map) {
-									//	_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
-									//}
 									stateStack.pop();
 									continue aroundAgain;
 								}
@@ -767,10 +682,6 @@ package com.aemon.json{
 						switch (tok.type) {
 							case Token.TYPE_RBRACE:{
 								curVal = mapStack.pop();
-								//TODO
-								//if (hand->callbacks && hand->callbacks->yajl_end_map) {
-								//	_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
-								//}
 								stateStack.pop();
 								continue aroundAgain;
 							}
@@ -795,10 +706,6 @@ package com.aemon.json{
 						switch (tok.type) {
 							case Token.TYPE_RBRACKET:{
 								curVal = arrayStack.pop();
-								//TODO
-								//if (hand->callbacks && hand->callbacks->yajl_end_array) {
-								//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
-								//}
 								stateStack.pop();
 								continue aroundAgain;
 							}
