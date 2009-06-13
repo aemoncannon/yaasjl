@@ -528,6 +528,9 @@ package com.aemon.json{
 						* a state that needs pushing will be anything other
 						* than state_start */
 						var stateToPush:int = PARSE_STATE_START;
+
+						var mapToPush:Object = null;
+						var arrayToPush:Array = null;
 						
 						tok = lex(jsonText, jsonTextLen);
 
@@ -567,7 +570,7 @@ package com.aemon.json{
 							case Token.TYPE_LBRACE:
 							var m:Object = {};
 							curVal = m;
-							mapStack.push(m);
+							mapToPush = m;
 							//TODO
 							//if (hand->callbacks && hand->callbacks->yajl_start_map) {
 							//	_CC_CHK(hand->callbacks->yajl_start_map(hand->ctx));
@@ -576,9 +579,9 @@ package com.aemon.json{
 							break;
 
 							case Token.TYPE_LBRACKET:
-							var a:Object = [];
+							var a:Array = [];
 							curVal = a;
-							arrayStack.push(a);
+							arrayToPush = a;
 							//TODO
 							//if (hand->callbacks && hand->callbacks->yajl_start_array) {
 							//	_CC_CHK(hand->callbacks->yajl_start_array(hand->ctx));
@@ -690,6 +693,12 @@ package com.aemon.json{
 						if (stateToPush != PARSE_STATE_START) {
 							stateStack.push(stateToPush);
 						}
+						if (arrayToPush != null) {
+							arrayStack.push(arrayToPush);
+						}
+						if (mapToPush != null) {
+							mapStack.push(mapToPush);
+						}
 						
 						continue aroundAgain;
 					}
@@ -720,6 +729,7 @@ package com.aemon.json{
 							case Token.TYPE_RBRACE:
 							switch(stateStack[stateStack.length - 1]){
 								case PARSE_STATE_MAP_START:{
+									curVal = mapStack.pop();
 									//TODO
 									//if (hand->callbacks && hand->callbacks->yajl_end_map) {
 									//	_CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
@@ -783,17 +793,20 @@ package com.aemon.json{
 						tok = lex(jsonText, jsonTextLen);
 
 						switch (tok.type) {
-							case Token.TYPE_RBRACKET:
-							//TODO
-							//if (hand->callbacks && hand->callbacks->yajl_end_array) {
-							//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
-							//}
-							stateStack.pop();
-							continue aroundAgain;
+							case Token.TYPE_RBRACKET:{
+								curVal = arrayStack.pop();
+								//TODO
+								//if (hand->callbacks && hand->callbacks->yajl_end_array) {
+								//	_CC_CHK(hand->callbacks->yajl_end_array(hand->ctx));
+								//}
+								stateStack.pop();
+								continue aroundAgain;
+							}
 
 							case Token.TYPE_COMMA:
 							stateStack[stateStack.length - 1] = PARSE_STATE_ARRAY_NEED_VAL;
 							continue aroundAgain;
+
 
 							case Token.TYPE_EOF:
 							throw new Error("Insufficient data");

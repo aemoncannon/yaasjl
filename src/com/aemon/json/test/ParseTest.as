@@ -15,9 +15,13 @@ package com.aemon.json.test{
 		}
 
 		public function test1():void{
-			var src:String = "{ \"dog\":{\"legs\": 4, \"name\": \"josh\" }}";
+			var src:String = "{\"thing\":[1,2,3,4],\"sd\":1,\"dog\":{\"legs\":4,\"name\":\"josh\"}}";
 			assertEquals("Should be the same.", src, roundTrip(src));
 		}
+
+
+
+
 
 		private function roundTrip(str:String):String{
 			var b:ByteArray = new ByteArray();
