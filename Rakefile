@@ -1,4 +1,4 @@
-DEBUG = true
+DEBUG = false
 
 MXMLC = PLATFORM =~ /win32/ ? "mxmlc.exe" : "mxmlc"
 COMPC = PLATFORM =~ /win32/ ? "compc.exe" : "compc"
@@ -13,6 +13,7 @@ ASDOC_OPTIONS = ["-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}",
                  "-doc-sources ./src/com/aemon/",
                  "-library-path+=./lib/FlexUnit.swc",
                  "-compiler.library-path+=./lib/as3corelib.swc",
+                 "-compiler.library-path+=./lib/JSwoof.swc",
                  "-exclude-classes com.adobe.net.URI", # <-- Hairy syntax breaks asdoc.
 #                 "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\""
                 ]
@@ -28,6 +29,7 @@ COMPILE_OPTIONS = [
                    "-compiler.debug=#{DEBUG}",
                    "-compiler.library-path+=./lib/FlexUnit.swc",
                    "-compiler.library-path+=./lib/as3corelib.swc",
+                   "-compiler.library-path+=./lib/JSwoof.swc",
                    "-compiler.source-path #{SHARED_CLASS_PATH.join(" ")}",
 #                   "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\"", 
                    "-default-size 1280 720"
@@ -41,7 +43,7 @@ SWC_OPTIONS = [
                "-compiler.optimize=true",
                "-source-path #{SHARED_CLASS_PATH.join(" ")}",
                "-compiler.library-path+=./lib/as3corelib.swc",
-               "-compiler.library-path+=./lib/OVP_2_0_0.swc",
+               "-compiler.library-path+=./lib/JSwoof.swc",
 #               "-define+=COMPILATION_CONSTANTS::debug,\"#{DEBUG}\""
               ]
 
@@ -59,20 +61,20 @@ file UNIT_TEST_RUNNER_TARGET => SHARED_SOURCES  do
   sh "#{MXMLC} #{COMPILE_OPTIONS.join(" ")} -file-specs src/com/aemon/json/test/FlexUnitTestRunner.mxml -output=#{UNIT_TEST_RUNNER_TARGET}"
 end
 
-#SWC_TARGET = "./bin/receiver.swc"
-#file SWC_TARGET => SHARED_SOURCES do
-#  sh "#{COMPC} #{SWC_OPTIONS.join(" ")} -output=#{SWC_TARGET}"
-#end
-#
+SWC_TARGET = "./bin/yaasjl.swc"
+file SWC_TARGET => SHARED_SOURCES do
+  sh "#{COMPC} #{SWC_OPTIONS.join(" ")} com.aemon.json.JSON -output=#{SWC_TARGET}"
+end
+
 #task :asdoc => [] do
 #  FileUtils.rm_rf Dir.glob("#{ASDOC_OUTPUT_DIR}/*")
 #  sh "#{ASDOC} #{ASDOC_OPTIONS.join(" ")}  -output=#{ASDOC_OUTPUT_DIR}"
 #  sh "#{SEVEN_ZIP} a ./bin/asdocs.zip ./asdocs"
 #end
 
-#task :swc => [SWC_TARGET] do
-#end
-#
+task :swc => [SWC_TARGET] do
+end
+
 
 task :benchmark => [BENCHMARK_TARGET] do
   sh "#{DEBUG_PROJECTOR} #{BENCHMARK_TARGET}"

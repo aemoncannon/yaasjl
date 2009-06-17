@@ -16,12 +16,15 @@ package com.aemon.json.test{
 
 
 		public function testTrivial():void{
-			assertEquals("Should be the same.", "0", roundTrip("0"));
+			assertEquals("Should be the same.", "[false]", roundTrip("[false]"));
+			assertEquals("Should be the same.", "[true]", roundTrip("[true]"));
+			assertEquals("Should be the same.", "[null]", roundTrip("[null]"));
+			assertEquals("Should be the same.", "[0]", roundTrip("[0]"));
 			assertEquals("Should be the same.", "[]", roundTrip("[]"));
 			assertEquals("Should be the same.", "{}", roundTrip("{}"));
-			assertEquals("Should be the same.", "0.5", roundTrip("0.5"));
-			assertEquals("Should be the same.", "2312323", roundTrip("2312323"));
-			assertEquals("Should be the same.", "\"hello\"", roundTrip("\"hello\""));
+			assertEquals("Should be the same.", "[0.5]", roundTrip("[0.5]"));
+			assertEquals("Should be the same.", "[2312323]", roundTrip("[2312323]"));
+			assertEquals("Should be the same.", "[\"hello\"]", roundTrip("[\"hello\"]"));
 		}
 
 		public function testBasic():void{

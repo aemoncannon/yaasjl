@@ -239,6 +239,49 @@ package com.aemon.json{
 
 
 
+		private static function unescapeString(source:String) : String {
+			var result:String = "";
+			var curPos:int = 0;
+			var endPos:int = source.length;
+			while (curPos < endPos) {
+				// we do not go character-by-character, so we speed up
+				// process greatly compare to how JSON parser does it
+				var si:int = source.indexOf("\\", curPos);
+				if (si > -1) {
+					// found escape character
+					result += source.substring(curPos, si);
+					curPos = si+2;
+					// part of below code is similar to what is in JSONTokenizer
+					var c:String = source.charAt(si+1);
+					switch ( c ) {
+						case '"': result += '"'; break;
+						case '/': result += '/'; break;
+						case '\\': result += '\\'; break;
+						case 'b': result += '\b'; break;
+						case 'f': result += '\f'; break;
+						case 'n': result += '\n'; break;
+						case 'r': result += '\r'; break;
+						case 't': result += '\t'; break;
+						case 'u': {
+							// convert 4 next hex digits into unicode char
+							// unlike in JSON parser, here we ignore any errors
+							// checking for the sake of performance
+							var hexValue:String = source.substr(si+2, 4);
+							result += String.fromCharCode(parseInt(hexValue, 16));
+							curPos += 4;
+							break;
+						}
+						default: result += '\\' + c;
+					}
+				} else {
+					result += source.substr(curPos);
+					break;
+				}
+			}
+			return result;
+		}
+
+
 		/* lex a string. input is the lexer, pointer to beginning of
 		* json text, and start of string (offset).
 		* a token is returned which has the following meanings:
@@ -252,7 +295,7 @@ package com.aemon.json{
 		private static function lexString(jsonText:ByteArray):Token
 		{
 			var tok:Token = Token.ERROR;
-			var hasEscapes:int = 0;
+			var hasEscapes:Boolean = false;
 			var startOffset:int = jsonText.position;
 			
 			for (;;) {
@@ -262,25 +305,28 @@ package com.aemon.json{
 				
 				/* quote terminates */
 				if (curChar == CHAR_DOUBLE_QUOTE) {
-
 					// Read the string data
 					var p:int = jsonText.position;
 					jsonText.position = startOffset;
 					var s:String = jsonText.readUTFBytes(p - startOffset - 1);
 					jsonText.position = p;
 
-					tok = Token.STRING(s);
-					break;
+					if (hasEscapes) {
+						return Token.STRING(unescapeString(s))
+					}
+					else{
+						return Token.STRING(s);
+					}
 				}
 				/* backslash escapes a set of control chars, */
 				else if (curChar == CHAR_BACK_SLASH) {
-					hasEscapes = 1;
+					hasEscapes = true;
 					
 					/* special case \u */
 					curChar = readChar(jsonText);
 					if (curChar == CHAR_U) {
 						var i:int = 0;
-						for (i=0; i<4; i++) {
+						for (i=0; i < 4; i++) {
 							curChar = readChar(jsonText);
 							if (!(charLookupTable[curChar] & VHC)){
 								/* back up to offending char */
@@ -315,12 +361,6 @@ package com.aemon.json{
 				// 					}
 				// 				}
 				/* accept it, and move on */
-			}
-			/* tell our buddy, the parser, wether he needs to process this string
-			* again */
-			if (hasEscapes && tok.type == Token.TYPE_STRING) {
-				// TODO: not sure what this is for
-			 	//tok = stringTokenWithEscapes(jsonText, startOffset, jsonText.position);
 			}
 			
 			return tok;
@@ -414,9 +454,9 @@ package com.aemon.json{
 			var startOffset:int = jsonText.position;
 			
 			for (;;) {
-				assert(jsonText.position <= jsonTextLen);
+				assert(jsonText.position <= jsonText.length);
 				
-				if (jsonText.position >= jsonTextLen) {
+				if (jsonText.position >= jsonText.length) {
 					return Token.EOF;
 				}
 				

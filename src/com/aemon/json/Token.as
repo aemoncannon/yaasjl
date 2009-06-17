@@ -26,9 +26,9 @@ package com.aemon.json{
 		public static const RBRACKET:Token = new Token(TYPE_RBRACKET, "]");
 		public static const COMMA:Token = new Token(TYPE_COMMA, ",");
 		public static const COLON:Token = new Token(TYPE_COLON, ":");
-		public static const TRUE:Token = new Token(TYPE_BOOL, "true");
-		public static const FALSE:Token = new Token(TYPE_BOOL, "false");
-		public static const NULL:Token = new Token(TYPE_NULL, "null");
+		public static const TRUE:Token = new Token(TYPE_BOOL, true);
+		public static const FALSE:Token = new Token(TYPE_BOOL, false);
+		public static const NULL:Token = new Token(TYPE_NULL, null);
 
 		public static function STRING(str:String):Token{ return new Token(TYPE_STRING, str); }
 		public static function NUMBER(num:Number):Token{ return new Token(TYPE_NUMBER, num); }
